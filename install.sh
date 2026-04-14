@@ -35,12 +35,11 @@ cat <<EOF
       "command": "CCSL_PLAN=max /bin/bash $TARGET"
 EOF
 
-if [ -f "$SETTINGS" ] && { [ -t 0 ] || [ -c /dev/tty ]; }; then
-    exec < /dev/tty
+if [ -f "$SETTINGS" ] && [ -r /dev/tty ]; then
     echo
-    read -r -p "Update $SETTINGS automatically? [y/N] " reply
+    read -r -p "Update $SETTINGS automatically? [y/N] " reply < /dev/tty
     if [ "${reply:-N}" = "y" ] || [ "${reply:-N}" = "Y" ]; then
-        read -r -p "Plan (api / max / pro) [api]: " plan
+        read -r -p "Plan (api / max / pro) [api]: " plan < /dev/tty
         plan="${plan:-api}"
         cmd="/bin/bash $TARGET"
         [ "$plan" != "api" ] && cmd="CCSL_PLAN=$plan $cmd"
