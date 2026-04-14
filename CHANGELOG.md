@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-04-14
+
+### Fixed
+- Installer hang when piped through `curl | bash` — `exec < /dev/tty` was redirecting bash's script stdin; each `read` now uses `< /dev/tty` locally
+
 ## [0.1.0] - 2026-04-13
 
 ### Added
@@ -23,5 +28,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env var toggles for every segment
 - Interactive installer with settings.json auto-update
 
-[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/zeroblack/vibeline/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/zeroblack/vibeline/releases/tag/v0.1.0
