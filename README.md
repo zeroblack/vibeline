@@ -190,12 +190,11 @@ Then remove the `statusLine` key from `~/.claude/settings.json`.
 
 ## Why not ccstatusline?
 
-[ccstatusline](https://github.com/sirmalloc/ccstatusline) is excellent and exposes far more metrics (weekly usage, block timers, token speed). vibeline is a different take:
+[ccstatusline](https://github.com/sirmalloc/ccstatusline) is excellent and fully configurable. vibeline is a different take:
 
-- **Emoji as vocabulary, not decoration** — every icon names its category
-- **Progression over counters** — a 3-hour session should *feel* different than a 30-minute one
-- **Zero config** — one file, one env var to install, no npm chain
-- **Bash only** — under 250 lines, no runtime beyond what every dev machine already has
+- **Emoji as vocabulary, not decoration** — every icon names its category, and the category has a progression (session evolves 🌱→☕→🔥→🧙, the plan usage evolves 🌊→🌀→🌪→⛈️, the week fills like the moon 🌑→🌒→🌓→🌕)
+- **Progression over counters** — a 3-hour session should *feel* different than a 30-minute one, even before you read the number
+- **Zero config** — one Bash file, no npm chain, no runtime beyond what every dev machine already has
 
 Use ccstatusline if you want every possible number on screen. Use vibeline if you want one that tells you how long you've been at it with a 🧙 or a 🧟.
 
