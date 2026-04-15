@@ -184,8 +184,8 @@ if [ "$CCSL_SHOW_CONTEXT" = "1" ] && [ -n "$used_pct" ]; then
     else                         bar_color="$C_GREEN";  ctx_icon="🟢"
     fi
     bar=""
-    for i in $(seq 1 "$blocks");             do bar="${bar}▓"; done
-    for i in $(seq $((blocks + 1)) 10);      do bar="${bar}░"; done
+    for _ in $(seq 1 "$blocks");             do bar="${bar}▓"; done
+    for _ in $(seq $((blocks + 1)) 10);      do bar="${bar}░"; done
     progress_bar="${bar_color}${bar}${C_RESET} $(printf "%3d" "$pct")%"
 fi
 

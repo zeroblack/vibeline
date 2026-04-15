@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+- Shellcheck SC2034 warning in the context-bar rendering loops (`i appears unused`). Loop counter renamed to `_` so CI stays green on newer shellcheck releases.
+
 ## [0.2.0] - 2026-04-14
 
 ### Changed
