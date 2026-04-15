@@ -30,11 +30,11 @@ Two lines — identity on top, metrics below. Long session names never push anyt
 
 **Line 2 — how it's going**
 
-- 📋 **TODOs** — count of `TODO / FIXME / XXX / HACK` in tracked files
+- 🎯 **tasks** — pending/in-progress/done for the current session's `TodoWrite` list (`1⚙ 2✓`). Falls back to 📋 code markers (`TODO / FIXME / XXX / HACK`) when no session tasks exist
 - 🚀 **elapsed** — how long you've been at it, with an emoji that evolves every stage
 - 💰 **cost** — session spend, colored by tier. ⚡ flashes when it grows
 - 🌊 **plan usage** — session bar (🌊→🌀→🌪→⛈️) and weekly bar (🌑→🌒→🌓→🌔→🌕) against your Max/Pro quota. Approximate, needs calibration per plan
-- 🟢 **context** — 10-block usage bar for the context window
+- 🟢 **context** — 5-dot usage bar for the context window
 - 🌆 **clock** — wall time, with a different icon for dawn / day / evening / night
 
 ## Install
@@ -131,7 +131,8 @@ Set any of these to `0` to hide that segment. Leave them alone to keep the defau
 | `CCSL_WEEK_QUOTA_TOKENS` | auto | override weekly token quota |
 | `CCSL_USAGE_TTL` | `60` | seconds to cache usage aggregation |
 | `CCSL_TODO_PATTERN` | `(TODO\|FIXME\|XXX\|HACK)` | regex of keywords to count |
-| `CCSL_TODO_TTL` | `60` | seconds to cache TODO count |
+| `CCSL_TODO_TTL` | `60` | seconds to cache code marker count |
+| `CCSL_TASK_TTL` | `15` | seconds to cache session task read |
 | `CCSL_ACTIVITY_LINGER` | `3` | seconds ⚡ stays visible |
 | `CCSL_CACHE_DIR` | `~/.claude/cache/statusline` | cache location |
 | `CCSL_SESSIONS_DIR` | `~/.claude/sessions` | Claude Code session store |

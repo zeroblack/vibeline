@@ -9,8 +9,9 @@
 : "${CCSL_SHOW_CLOCK:=1}"
 : "${CCSL_SHOW_USAGE:=1}"
 : "${CCSL_PLAN:=api}"
-: "${CCSL_TODO_PATTERN:=(TODO|FIXME|XXX|HACK)}"
+: "${CCSL_TODO_PATTERN:=\\b(TODO|FIXME|XXX|HACK)\\b}"
 : "${CCSL_TODO_TTL:=60}"
+: "${CCSL_TASK_TTL:=15}"
 : "${CCSL_USAGE_TTL:=60}"
 : "${CCSL_ACTIVITY_LINGER:=3}"
 : "${CCSL_CACHE_DIR:=$HOME/.claude/cache/statusline}"
@@ -134,8 +135,43 @@ if [ -n "$cwd" ] && git -C "$cwd" rev-parse --git-dir >/dev/null 2>&1; then
     fi
 fi
 
+compute_session_tasks() {
+    local sid="$1" jsonl
+    [ -z "$sid" ] && return
+    jsonl=$(find "$CCSL_PROJECTS_DIR" -name "${sid}.jsonl" -print -quit 2>/dev/null)
+    [ -z "$jsonl" ] || [ ! -f "$jsonl" ] && return
+    jq -rs '
+        [.[] | select(.message.content? | type == "array")
+             | .message.content[]
+             | select(.type == "tool_use" and .name == "TodoWrite")
+             | .input.todos] | last
+        | if . then
+            "\([.[] | select(.status == "completed")] | length) \([.[] | select(.status == "in_progress")] | length) \([.[] | select(.status == "pending")] | length)"
+          else empty end
+    ' "$jsonl" 2>/dev/null
+}
+
+read_session_tasks_cached() {
+    local sid="$1" cache age
+    cache="$CCSL_CACHE_DIR/tasks-${sid}"
+    age=99999
+    [ -f "$cache" ] && age=$(( $(date +%s) - $(stat_mtime "$cache") ))
+    if [ "$age" -gt "$CCSL_TASK_TTL" ]; then
+        if compute_session_tasks "$sid" > "$cache.tmp" 2>/dev/null; then
+            mv "$cache.tmp" "$cache"
+        else
+            rm -f "$cache.tmp"
+        fi
+    fi
+    cat "$cache" 2>/dev/null
+}
+
+session_task_line=""
 todo_count=""
-if [ "$CCSL_SHOW_TODOS" = "1" ] && [ "$is_git_repo" = "1" ]; then
+if [ "$CCSL_SHOW_TODOS" = "1" ]; then
+    [ -n "$session_id" ] && session_task_line=$(read_session_tasks_cached "$session_id")
+fi
+if [ "$CCSL_SHOW_TODOS" = "1" ] && [ -z "$session_task_line" ] && [ "$is_git_repo" = "1" ]; then
     todo_file="$CCSL_CACHE_DIR/$(echo "$cwd" | tr '/' '_').todos"
     stale=1
     if [ -f "$todo_file" ]; then
@@ -143,7 +179,10 @@ if [ "$CCSL_SHOW_TODOS" = "1" ] && [ "$is_git_repo" = "1" ]; then
         [ "$age" -lt "$CCSL_TODO_TTL" ] && stale=0
     fi
     if [ "$stale" = "1" ]; then
-        c=$(git -C "$cwd" grep -I -c -E "$CCSL_TODO_PATTERN" 2>/dev/null \
+        c=$(git -C "$cwd" grep -I -c -E "$CCSL_TODO_PATTERN" -- \
+                ':(exclude)*.md' ':(exclude)*.markdown' ':(exclude)*.txt' \
+                ':(exclude)*.rst'  ':(exclude)CHANGELOG*' ':(exclude)CONTRIBUTING*' \
+                2>/dev/null \
             | awk -F: '{sum += $NF} END {print sum+0}')
         echo "${c:-0}" > "$todo_file"
     fi
@@ -317,7 +356,26 @@ if [ -n "$folder" ]; then
 fi
 
 todo_segment=""
-[ -n "$todo_count" ] && [ "$todo_count" -gt 0 ] && todo_segment="📋  ${C_ORANGE}${todo_count}${C_RESET}"
+if [ -n "$session_task_line" ]; then
+    t_done=$(echo   "$session_task_line" | awk '{print $1+0}')
+    t_doing=$(echo  "$session_task_line" | awk '{print $2+0}')
+    t_pending=$(echo "$session_task_line" | awk '{print $3+0}')
+    t_total=$(( t_done + t_doing + t_pending ))
+    if [ "$t_total" -gt 0 ]; then
+        if   [ "$t_done" -eq "$t_total" ]; then task_color="$C_GREEN"
+        elif [ "$t_doing" -gt 0 ];         then task_color="$C_YELLOW"
+        else                                    task_color="$C_ORANGE"
+        fi
+        task_parts=""
+        [ "$t_doing"   -gt 0 ] && task_parts="${task_parts} ${t_doing}⚙"
+        [ "$t_done"    -gt 0 ] && task_parts="${task_parts} ${t_done}✓"
+        [ "$t_pending" -gt 0 ] && task_parts="${task_parts} ${t_pending}○"
+        task_parts=${task_parts# }
+        todo_segment="🎯  ${task_color}${task_parts}${C_RESET}"
+    fi
+elif [ -n "$todo_count" ] && [ "$todo_count" -gt 0 ]; then
+    todo_segment="📋  ${C_ORANGE}${todo_count}${C_RESET}"
+fi
 
 session_segment=""
 [ "$CCSL_SHOW_SESSION_NAME" = "1" ] && [ -n "$session_name" ] && session_segment="💬  ${C_YELLOW}${session_name}${C_RESET}"

@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+- Tasks segment is now hybrid: `🎯 1⚙ 2✓ 0○` reads the current session's `TodoWrite` list when available, showing in-progress (⚙), completed (✓), and pending (○) counts. When no session tasks exist it falls back to the 📋 code marker counter.
+- Code marker grep now excludes `*.md`, `*.markdown`, `*.txt`, `*.rst`, and `CHANGELOG*` / `CONTRIBUTING*` files so documentation mentions of "TODO" no longer inflate the count.
+- Default code marker regex tightened from `(TODO|FIXME|XXX|HACK)` to `\b(TODO|FIXME|XXX|HACK)\b` so identifiers like `CCSL_TODO_PATTERN` or `show_todos` stop matching as false positives.
+
+### Added
+- `CCSL_TASK_TTL` env var (default `15s`) to tune how often session tasks are re-read.
+
 ## [0.3.0] - 2026-04-14
 
 ### Added
