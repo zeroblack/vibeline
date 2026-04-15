@@ -7,8 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-04-14
+
 ### Changed
-- Two-line layout: identity (model · location · session) on line 1, metrics (todos · elapsed · cost · context · clock) on line 2. Long session names no longer truncate the right side of the bar.
+- Two-line statusline layout. Identity (model · location · session) sits on line 1; metrics (todos · elapsed · cost · context · clock) on line 2. Long session names no longer truncate the right side of the bar.
 
 ## [0.1.1] - 2026-04-14
 
