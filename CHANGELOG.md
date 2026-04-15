@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.4.0] - 2026-04-15
+
 ### Changed
 - Tasks segment is now hybrid: `🎯 1⚙ 2✓ 0○` reads the current session's `TodoWrite` list when available, showing in-progress (⚙), completed (✓), and pending (○) counts. When no session tasks exist it falls back to the 📋 code marker counter.
 - Code marker grep now excludes `*.md`, `*.markdown`, `*.txt`, `*.rst`, and `CHANGELOG*` / `CONTRIBUTING*` files so documentation mentions of "TODO" no longer inflate the count.
@@ -60,7 +62,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env var toggles for every segment
 - Interactive installer with settings.json auto-update
 
-[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.3.0...HEAD
+[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.4.0...HEAD
+[0.4.0]: https://github.com/zeroblack/vibeline/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zeroblack/vibeline/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/zeroblack/vibeline/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/zeroblack/vibeline/compare/v0.1.1...v0.2.0
