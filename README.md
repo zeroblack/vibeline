@@ -33,6 +33,7 @@ Two lines — identity on top, metrics below. Long session names never push anyt
 - 📋 **TODOs** — count of `TODO / FIXME / XXX / HACK` in tracked files
 - 🚀 **elapsed** — how long you've been at it, with an emoji that evolves every stage
 - 💰 **cost** — session spend, colored by tier. ⚡ flashes when it grows
+- 🌊 **plan usage** — session bar (🌊→🌀→🌪→⛈️) and weekly bar (🌑→🌒→🌓→🌔→🌕) against your Max/Pro quota. Approximate, needs calibration per plan
 - 🟢 **context** — 10-block usage bar for the context window
 - 🌆 **clock** — wall time, with a different icon for dawn / day / evening / night
 
@@ -74,6 +75,19 @@ Your session "cost" is theoretical (you pay a subscription, not per token). Add 
 "command": "CCSL_PLAN=max /bin/bash ~/.claude/statusline.sh"
 ```
 
+The plan also unlocks the **usage bars** — a wave for your current 5h session and a moon phase for the week. Values in `CCSL_PLAN`: `pro`, `max` (Max 5x), `max20` (Max 20x). If your numbers don't match Claude Code's own `/usage` screen, calibrate them:
+
+1. Open `/usage` in Claude Code, note the session and weekly percentages
+2. Compare to what vibeline shows (e.g. vibeline says `~67%`, `/usage` says `53%`)
+3. Look up the raw tokens vibeline has measured: `cat ~/.claude/cache/statusline/usage`
+4. Compute the real quota for your plan: `quota = tokens ÷ (real_pct / 100)`
+5. Lock it in with:
+   ```json
+   "command": "CCSL_PLAN=max20 CCSL_SESSION_QUOTA_TOKENS=1000000000 CCSL_WEEK_QUOTA_TOKENS=6500000000 /bin/bash ~/.claude/statusline.sh"
+   ```
+
+Anthropic doesn't publish exact quotas, so the defaults are best-guess and the bars are marked `~` to signal they're approximate.
+
 ## Customize
 
 Every option is an environment variable — you set them by prepending them to the `command` string in `settings.json`. No config file.
@@ -111,12 +125,17 @@ Set any of these to `0` to hide that segment. Leave them alone to keep the defau
 | `CCSL_SHOW_ELAPSED` | `1` | evolving time emoji |
 | `CCSL_SHOW_CONTEXT` | `1` | context usage bar |
 | `CCSL_SHOW_CLOCK` | `1` | wall clock |
-| `CCSL_PLAN` | `api` | `max` or `pro` adds `~` prefix to cost |
+| `CCSL_SHOW_USAGE` | `1` | 🌊 plan usage bars (session + week) |
+| `CCSL_PLAN` | `api` | `pro`, `max`, or `max20` — unlocks cost prefix and usage bars |
+| `CCSL_SESSION_QUOTA_TOKENS` | auto | override 5h session token quota (calibrate vs `/usage`) |
+| `CCSL_WEEK_QUOTA_TOKENS` | auto | override weekly token quota |
+| `CCSL_USAGE_TTL` | `60` | seconds to cache usage aggregation |
 | `CCSL_TODO_PATTERN` | `(TODO\|FIXME\|XXX\|HACK)` | regex of keywords to count |
 | `CCSL_TODO_TTL` | `60` | seconds to cache TODO count |
 | `CCSL_ACTIVITY_LINGER` | `3` | seconds ⚡ stays visible |
 | `CCSL_CACHE_DIR` | `~/.claude/cache/statusline` | cache location |
 | `CCSL_SESSIONS_DIR` | `~/.claude/sessions` | Claude Code session store |
+| `CCSL_PROJECTS_DIR` | `~/.claude/projects` | Claude Code projects store (read for token aggregation) |
 
 The model, folder, and git branch segments always show when relevant — they anchor line 1. If every variable on line 2 is set to `0`, the second line disappears and you get a single-line statusline.
 
@@ -158,6 +177,16 @@ rm -rf ~/.claude/cache/statusline
 
 Then remove the `statusLine` key from `~/.claude/settings.json`.
 
+## Usage bar progression
+
+| Session (5h) | | Week (7d) | |
+|---|---|---|---|
+| < 50% | 🌊 calm | < 25% | 🌑 new moon |
+| 50 – 75% | 🌀 riptide | 25 – 50% | 🌒 waxing crescent |
+| 75 – 90% | 🌪 cyclone | 50 – 75% | 🌓 first quarter |
+| ≥ 90% | ⛈️ storm | 75 – 90% | 🌔 waxing gibbous |
+|  |  | ≥ 90% | 🌕 full moon |
+
 ## Why not ccstatusline?
 
 [ccstatusline](https://github.com/sirmalloc/ccstatusline) is excellent and exposes far more metrics (weekly usage, block timers, token speed). vibeline is a different take:
@@ -172,6 +201,10 @@ Use ccstatusline if you want every possible number on screen. Use vibeline if yo
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Credits
+
+Token-window aggregation over local JSONL was inspired by [ccusage](https://github.com/ryoppippi/ccusage) by [@ryoppippi](https://github.com/ryoppippi) — MIT-licensed. The math (rolling 5h session and 7-day windows, summing input + output + cache_creation + cache_read) follows their approach; vibeline reimplements it in Bash to stay dependency-free.
 
 ## License
 
