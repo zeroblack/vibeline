@@ -18,12 +18,19 @@ It's emoji-first on purpose, built for the long sessions — the kind where you 
 
 I made it for me. If it's useful to you too, even better.
 
-## What you see, left to right
+## What you see
+
+Two lines — identity on top, metrics below. Long session names never push anything off-screen.
+
+**Line 1 — where you are**
 
 - 🧠 **model** — Opus, 🎵 Sonnet, or 🍃 Haiku
 - 📁 **location** — current folder + git branch, dirty file count, ahead/behind
-- 📋 **TODOs** — count of `TODO / FIXME / XXX / HACK` in tracked files
 - 💬 **session name** — whatever Claude Code has named this session
+
+**Line 2 — how it's going**
+
+- 📋 **TODOs** — count of `TODO / FIXME / XXX / HACK` in tracked files
 - 🚀 **elapsed** — how long you've been at it, with an emoji that evolves every stage
 - 💰 **cost** — session spend, colored by tier. ⚡ flashes when it grows
 - 🟢 **context** — 10-block usage bar for the context window
@@ -111,7 +118,7 @@ Set any of these to `0` to hide that segment. Leave them alone to keep the defau
 | `CCSL_CACHE_DIR` | `~/.claude/cache/statusline` | cache location |
 | `CCSL_SESSIONS_DIR` | `~/.claude/sessions` | Claude Code session store |
 
-The model, folder, and git branch segments always show when relevant — they're the backbone of the line.
+The model, folder, and git branch segments always show when relevant — they anchor line 1. If every variable on line 2 is set to `0`, the second line disappears and you get a single-line statusline.
 
 ## Elapsed time progression
 

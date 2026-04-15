@@ -224,20 +224,25 @@ context_segment=""
 clock_segment=""
 [ "$CCSL_SHOW_CLOCK" = "1" ] && clock_segment="${clock_icon}  ${C_GREY}${clock_now}${C_RESET}"
 
-parts=()
-parts+=("$model_segment")
-[ -n "$place_segment" ]   && parts+=("$place_segment")
-[ -n "$todo_segment" ]    && parts+=("$todo_segment")
-[ -n "$session_segment" ] && parts+=("$session_segment")
-[ -n "$time_segment" ]    && parts+=("$time_segment")
-[ -n "$cost_segment" ]    && parts+=("$cost_segment")
-[ -n "$context_segment" ] && parts+=("$context_segment")
-[ -n "$clock_segment" ]   && parts+=("$clock_segment")
+line1=("$model_segment")
+[ -n "$place_segment" ]   && line1+=("$place_segment")
+[ -n "$session_segment" ] && line1+=("$session_segment")
+
+line2=()
+[ -n "$todo_segment" ]    && line2+=("$todo_segment")
+[ -n "$time_segment" ]    && line2+=("$time_segment")
+[ -n "$cost_segment" ]    && line2+=("$cost_segment")
+[ -n "$context_segment" ] && line2+=("$context_segment")
+[ -n "$clock_segment" ]   && line2+=("$clock_segment")
 
 separator="${C_DIM} │ ${C_RESET}"
-out="${parts[0]}"
-for i in $(seq 1 $((${#parts[@]} - 1))); do
-    out="${out}${separator}${parts[$i]}"
-done
 
-printf "%b" "$out"
+render_line() {
+    local out="$1"; shift
+    local p
+    for p in "$@"; do out="${out}${separator}${p}"; done
+    printf "%b" "$out"
+}
+
+render_line "${line1[@]}"
+[ "${#line2[@]}" -gt 0 ] && { printf "\n"; render_line "${line2[@]}"; }
