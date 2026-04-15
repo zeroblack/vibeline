@@ -336,13 +336,24 @@ line1=("$model_segment")
 [ -n "$session_segment" ] && line1+=("$session_segment")
 
 line2=()
-[ -n "$todo_segment" ]          && line2+=("$todo_segment")
-[ -n "$time_segment" ]          && line2+=("$time_segment")
-[ -n "$cost_segment" ]          && line2+=("$cost_segment")
-[ -n "$session_usage_segment" ] && line2+=("$session_usage_segment")
-[ -n "$week_usage_segment" ]    && line2+=("$week_usage_segment")
-[ -n "$context_segment" ]       && line2+=("$context_segment")
-[ -n "$clock_segment" ]         && line2+=("$clock_segment")
+join_group() {
+    local joined="" p
+    for p in "$@"; do
+        [ -z "$p" ] && continue
+        if [ -z "$joined" ]; then joined="$p"
+        else joined="${joined}  ${p}"
+        fi
+    done
+    printf "%s" "$joined"
+}
+
+time_group=$(join_group "$time_segment" "$clock_segment")
+capacity_group=$(join_group "$session_usage_segment" "$week_usage_segment" "$context_segment")
+
+[ -n "$todo_segment" ]    && line2+=("$todo_segment")
+[ -n "$time_group" ]      && line2+=("$time_group")
+[ -n "$cost_segment" ]    && line2+=("$cost_segment")
+[ -n "$capacity_group" ]  && line2+=("$capacity_group")
 
 separator="${C_DIM} │ ${C_RESET}"
 
