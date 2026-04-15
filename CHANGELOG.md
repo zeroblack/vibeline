@@ -7,10 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-04-14
+
 ### Added
-- Plan usage segment: `🌊 ▓▓░░░ ~53%` for the current 5h session and `🌓 ▓▓░░░ ~51%w` for the week. Bars evolve through a wave/moon-phase progression. Uses local JSONL aggregation with a 60s async cache so the statusline stays fast.
+- Plan usage segment: `🌀 ●●○○○ ~53%` for the current 5h session and `🌓 ●●○○○ ~51%w` for the week. Bars evolve through a wave (🌊→🌀→🌪→⛈️) and moon phase (🌑→🌒→🌓→🌔→🌕) progression. Uses local JSONL aggregation with a 60s async cache so the statusline stays fast.
 - `CCSL_SHOW_USAGE`, `CCSL_SESSION_QUOTA_TOKENS`, `CCSL_WEEK_QUOTA_TOKENS`, `CCSL_USAGE_TTL`, `CCSL_PROJECTS_DIR` env vars.
 - `CCSL_PLAN=max20` for Max 20x calibration defaults.
+
+### Changed
+- All three progress bars (session, week, context) now render as 5-dot `●○` for a lighter visual footprint.
+- Line 2 is grouped by domain — code · time (elapsed + clock) · cost · capacity (session + week + context) — so the clock no longer sits isolated after the usage bars.
 
 ### Fixed
 - Context bar rendered extra blocks at 100% on macOS (BSD `seq` descends when start > end). Both bars now use a while-loop counter.
@@ -46,7 +52,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env var toggles for every segment
 - Interactive installer with settings.json auto-update
 
-[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.2.1...HEAD
+[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/zeroblack/vibeline/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/zeroblack/vibeline/compare/v0.2.0...v0.2.1
 [0.2.0]: https://github.com/zeroblack/vibeline/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/zeroblack/vibeline/compare/v0.1.0...v0.1.1
