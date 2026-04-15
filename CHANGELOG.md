@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- Plan usage segment: `🌊 ▓▓░░░ ~53%` for the current 5h session and `🌓 ▓▓░░░ ~51%w` for the week. Bars evolve through a wave/moon-phase progression. Uses local JSONL aggregation with a 60s async cache so the statusline stays fast.
+- `CCSL_SHOW_USAGE`, `CCSL_SESSION_QUOTA_TOKENS`, `CCSL_WEEK_QUOTA_TOKENS`, `CCSL_USAGE_TTL`, `CCSL_PROJECTS_DIR` env vars.
+- `CCSL_PLAN=max20` for Max 20x calibration defaults.
+
+### Fixed
+- Context bar rendered extra blocks at 100% on macOS (BSD `seq` descends when start > end). Both bars now use a while-loop counter.
+
 ## [0.2.1] - 2026-04-15
 
 ### Fixed
