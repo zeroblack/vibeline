@@ -67,26 +67,34 @@ chmod +x ~/.claude/statusline.sh
 
 **3.** Restart Claude Code. That's it.
 
-### On Claude Max or Pro?
+### On a Claude subscription?
 
-Your session "cost" is theoretical (you pay a subscription, not per token). Add `CCSL_PLAN=max` so the number shows as `~$2.45` to signal it:
+Pick the value that matches your plan. The prefix `~` in the cost signals "theoretical" (you pay a flat fee, not per token), and the usage bars get the right quota baseline:
+
+| Your plan | `CCSL_PLAN` | Session baseline | Weekly baseline |
+|---|---|---|---|
+| Pro ($20/mo) | `pro` | 50M tokens | 325M tokens |
+| Max 5x ($100/mo) | `max5` | 250M tokens | 1.625B tokens |
+| Max 20x ($200/mo) | `max20` | 1B tokens | 6.5B tokens |
 
 ```json
-"command": "CCSL_PLAN=max /bin/bash ~/.claude/statusline.sh"
+"command": "CCSL_PLAN=max5 /bin/bash ~/.claude/statusline.sh"
 ```
 
-The plan also unlocks the **usage bars** — a wave for your current 5h session and a moon phase for the week. Values in `CCSL_PLAN`: `pro`, `max` (Max 5x), `max20` (Max 20x). If your numbers don't match Claude Code's own `/usage` screen, calibrate them:
+> **A note on the numbers.** Anthropic publishes plan limits as relative multipliers (Max 5x / Max 20x) and as ranges of Sonnet-hours per week — not as exact token quotas. The baselines above respect the 5x / 20x ratio officially, but the absolute numbers are calibrated best-guesses. The bars show `~` to make this explicit. If yours don't match `/usage`, override them (see below).
+>
+> Legacy note: `CCSL_PLAN=max` still works as an alias for `max5` for backwards compatibility.
+
+#### Calibrate against `/usage`
 
 1. Open `/usage` in Claude Code, note the session and weekly percentages
 2. Compare to what vibeline shows (e.g. vibeline says `~67%`, `/usage` says `53%`)
-3. Look up the raw tokens vibeline has measured: `cat ~/.claude/cache/statusline/usage`
-4. Compute the real quota for your plan: `quota = tokens ÷ (real_pct / 100)`
-5. Lock it in with:
+3. Look up the raw tokens vibeline measured: `cat ~/.claude/cache/statusline/usage`
+4. Compute your real quota: `quota = tokens ÷ (real_pct / 100)`
+5. Lock it in:
    ```json
    "command": "CCSL_PLAN=max20 CCSL_SESSION_QUOTA_TOKENS=1000000000 CCSL_WEEK_QUOTA_TOKENS=6500000000 /bin/bash ~/.claude/statusline.sh"
    ```
-
-Anthropic doesn't publish exact quotas, so the defaults are best-guess and the bars are marked `~` to signal they're approximate.
 
 ## Customize
 
@@ -126,7 +134,7 @@ Set any of these to `0` to hide that segment. Leave them alone to keep the defau
 | `CCSL_SHOW_CONTEXT` | `1` | context usage bar |
 | `CCSL_SHOW_CLOCK` | `1` | wall clock |
 | `CCSL_SHOW_USAGE` | `1` | 🌊 plan usage bars (session + week) |
-| `CCSL_PLAN` | `api` | `pro`, `max`, or `max20` — unlocks cost prefix and usage bars |
+| `CCSL_PLAN` | `api` | `pro`, `max5`, or `max20` — unlocks cost prefix and usage bars (`max` is still accepted as alias for `max5`) |
 | `CCSL_SESSION_QUOTA_TOKENS` | auto | override 5h session token quota (calibrate vs `/usage`) |
 | `CCSL_WEEK_QUOTA_TOKENS` | auto | override weekly token quota |
 | `CCSL_USAGE_TTL` | `60` | seconds to cache usage aggregation |

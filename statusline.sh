@@ -212,7 +212,7 @@ if [ "$CCSL_SHOW_COST" = "1" ] && [ -n "$cost_usd" ]; then
     ge "$cost_usd" 10 && cost_color="$C_RED"
     prefix=""
     case "$(echo "$CCSL_PLAN" | tr '[:upper:]' '[:lower:]')" in
-        max|pro) prefix="~" ;;
+        pro|max|max5|max20) prefix="~" ;;
     esac
     cost_segment="💰  ${cost_color}${prefix}\$${cost_fmt}${C_RESET}"
     [ -n "$activity" ] && cost_segment="${cost_segment} ${C_YELLOW}${activity}${C_RESET}"
@@ -220,10 +220,10 @@ fi
 
 plan_lc=$(echo "$CCSL_PLAN" | tr '[:upper:]' '[:lower:]')
 case "$plan_lc" in
-    pro)   default_session_q=50000000;   default_week_q=325000000 ;;
-    max)   default_session_q=250000000;  default_week_q=1625000000 ;;
-    max20) default_session_q=1000000000; default_week_q=6500000000 ;;
-    *)     default_session_q=0;          default_week_q=0 ;;
+    pro)         default_session_q=50000000;   default_week_q=325000000 ;;
+    max|max5)    default_session_q=250000000;  default_week_q=1625000000 ;;
+    max20)       default_session_q=1000000000; default_week_q=6500000000 ;;
+    *)           default_session_q=0;          default_week_q=0 ;;
 esac
 session_quota=${CCSL_SESSION_QUOTA_TOKENS:-$default_session_q}
 week_quota=${CCSL_WEEK_QUOTA_TOKENS:-$default_week_q}

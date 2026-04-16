@@ -31,21 +31,35 @@ cat <<EOF
     }
   }
 
-  If you're on Claude Max or Pro, prepend CCSL_PLAN=max to the command:
-      "command": "CCSL_PLAN=max /bin/bash $TARGET"
+  On a Claude subscription? Prepend the matching CCSL_PLAN. Examples:
+      pro     → Pro               "command": "CCSL_PLAN=pro /bin/bash $TARGET"
+      max5    → Max 5x  (\$100/mo) "command": "CCSL_PLAN=max5 /bin/bash $TARGET"
+      max20   → Max 20x (\$200/mo) "command": "CCSL_PLAN=max20 /bin/bash $TARGET"
 EOF
 
 if [ -f "$SETTINGS" ] && [ -r /dev/tty ]; then
     echo
     read -r -p "Update $SETTINGS automatically? [y/N] " reply < /dev/tty
     if [ "${reply:-N}" = "y" ] || [ "${reply:-N}" = "Y" ]; then
-        read -r -p "Plan (api / max / pro) [api]: " plan < /dev/tty
-        plan="${plan:-api}"
+        echo
+        echo "Which Claude plan are you on?"
+        echo "  1) api    — pay per token (default)"
+        echo "  2) pro    — \$20/mo"
+        echo "  3) max5   — Max 5x (\$100/mo)"
+        echo "  4) max20  — Max 20x (\$200/mo)"
+        read -r -p "Choose [1-4] or type the name [1]: " plan_in < /dev/tty
+        case "${plan_in:-1}" in
+            1|api)     plan="api"   ;;
+            2|pro)     plan="pro"   ;;
+            3|max5|max) plan="max5" ;;
+            4|max20)   plan="max20" ;;
+            *)         plan="$plan_in" ;;
+        esac
         cmd="/bin/bash $TARGET"
         [ "$plan" != "api" ] && cmd="CCSL_PLAN=$plan $cmd"
         tmp=$(mktemp)
         jq --arg c "$cmd" '.statusLine = {"type":"command","command":$c}' "$SETTINGS" > "$tmp" && mv "$tmp" "$SETTINGS"
-        echo "✓ $SETTINGS updated"
+        echo "✓ $SETTINGS updated (plan: $plan)"
     else
         echo "skipped — update it manually"
     fi
