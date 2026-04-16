@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.0] - 2026-04-16
+
 ### Added
 - `CCSL_PLAN=max5` as the explicit name for Max 5x plans. Clearer than the ambiguous `max`, which would leave Max 20x users silently using the 5x baseline (and reading percentages 4x too high).
 - Installer now lists all four plan options with their subscription tier (`api`, `pro`, `max5`, `max20`) and accepts numeric shortcuts.
@@ -75,7 +77,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env var toggles for every segment
 - Interactive installer with settings.json auto-update
 
-[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.4.0...HEAD
+[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.5.0...HEAD
+[0.5.0]: https://github.com/zeroblack/vibeline/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zeroblack/vibeline/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zeroblack/vibeline/compare/v0.2.1...v0.3.0
 [0.2.1]: https://github.com/zeroblack/vibeline/compare/v0.2.0...v0.2.1
