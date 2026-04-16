@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- `CCSL_PLAN=max5` as the explicit name for Max 5x plans. Clearer than the ambiguous `max`, which would leave Max 20x users silently using the 5x baseline (and reading percentages 4x too high).
+- Installer now lists all four plan options with their subscription tier (`api`, `pro`, `max5`, `max20`) and accepts numeric shortcuts.
+
+### Fixed
+- Cost segment now shows the theoretical prefix `~$…` for `max20` too. Previously only `max` and `pro` got the prefix, which misrepresented Max 20x sessions as if they were billed per token.
+
+### Changed
+- README plan section rewritten: dedicated table per plan, explicit baselines, and a clearer disclaimer that quotas are calibrated estimates (Anthropic only publishes the 5x/20x multipliers, not token numbers).
+
+### Compatibility
+- `CCSL_PLAN=max` keeps working as an alias for `max5`.
+
 ## [0.4.0] - 2026-04-15
 
 ### Changed
