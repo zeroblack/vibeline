@@ -12,31 +12,29 @@
 : "${CCSL_TODO_PATTERN:=\\b(TODO|FIXME|XXX|HACK)\\b}"
 : "${CCSL_TODO_TTL:=60}"
 : "${CCSL_TASK_TTL:=15}"
-: "${CCSL_USAGE_TTL:=60}"
 : "${CCSL_ACTIVITY_LINGER:=3}"
 : "${CCSL_CACHE_DIR:=$HOME/.claude/cache/statusline}"
 : "${CCSL_SESSIONS_DIR:=$HOME/.claude/sessions}"
 : "${CCSL_PROJECTS_DIR:=$HOME/.claude/projects}"
-: "${CCSL_SESSION_QUOTA_TOKENS:=}"
-: "${CCSL_WEEK_QUOTA_TOKENS:=}"
 
 command -v jq  >/dev/null 2>&1 || { printf "statusline: jq required\n";  exit 0; }
 command -v awk >/dev/null 2>&1 || { printf "statusline: awk required\n"; exit 0; }
 
 mkdir -p "$CCSL_CACHE_DIR" 2>/dev/null
 
-C_DIM="\033[2m"; C_RESET="\033[0m"
-C_CYAN="\033[96m"
-C_BLUE="\033[94m";  C_MAGENTA="\033[95m"
-C_YELLOW="\033[93m"; C_ORANGE="\033[33m"; C_MUTED="\033[36m"
-C_GREEN="\033[92m";  C_RED="\033[91m";    C_GREY="\033[90m"
+C_DIM=$'\033[2m'; C_RESET=$'\033[0m'
+C_CYAN=$'\033[96m'
+C_BLUE=$'\033[94m';  C_MAGENTA=$'\033[95m'
+C_YELLOW=$'\033[93m'; C_ORANGE=$'\033[33m'; C_MUTED=$'\033[36m'
+C_GREEN=$'\033[92m';  C_RED=$'\033[91m';    C_GREY=$'\033[90m'
 
 stat_mtime() { stat -f %m "$1" 2>/dev/null || stat -c %Y "$1" 2>/dev/null || echo 0; }
 gt() { awk -v a="$1" -v b="$2" 'BEGIN {exit !(a > b)}'; }
 ge() { awk -v a="$1" -v b="$2" 'BEGIN {exit !(a >= b)}'; }
 
 input=$(cat)
-j() { echo "$input" | jq -r "$1 // empty"; }
+echo "$input" | jq empty 2>/dev/null || input='{}'
+j() { echo "$input" | jq -r "$1 // empty" | tr -d '[:cntrl:]'; }
 
 model=$(j '.model.display_name'); [ -z "$model" ] && model="Claude"
 used_pct=$(j '.context_window.used_percentage')
@@ -218,56 +216,6 @@ if [ "$CCSL_SHOW_COST" = "1" ] && [ -n "$cost_usd" ]; then
     [ -n "$activity" ] && cost_segment="${cost_segment} ${C_YELLOW}${activity}${C_RESET}"
 fi
 
-plan_lc=$(echo "$CCSL_PLAN" | tr '[:upper:]' '[:lower:]')
-case "$plan_lc" in
-    pro)         default_session_q=50000000;   default_week_q=325000000 ;;
-    max|max5)    default_session_q=250000000;  default_week_q=1625000000 ;;
-    max20)       default_session_q=1000000000; default_week_q=6500000000 ;;
-    *)           default_session_q=0;          default_week_q=0 ;;
-esac
-session_quota=${CCSL_SESSION_QUOTA_TOKENS:-$default_session_q}
-week_quota=${CCSL_WEEK_QUOTA_TOKENS:-$default_week_q}
-
-compute_usage() {
-    local session_cutoff week_cutoff files
-    session_cutoff=$(date -u -v-5H '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
-                 || date -u -d '5 hours ago' '+%Y-%m-%dT%H:%M:%SZ')
-    week_cutoff=$(date -u -v-7d '+%Y-%m-%dT%H:%M:%SZ' 2>/dev/null \
-               || date -u -d '7 days ago' '+%Y-%m-%dT%H:%M:%SZ')
-    files=$(find "$CCSL_PROJECTS_DIR" -name '*.jsonl' -mmin -10080 2>/dev/null)
-    [ -z "$files" ] && { echo "0 0"; return; }
-    # shellcheck disable=SC2016
-    echo "$files" | tr '\n' '\0' | xargs -0 jq -rs \
-        --arg sc "$session_cutoff" --arg wc "$week_cutoff" '
-        reduce .[] as $e ({s:0, w:0};
-          ($e.message.usage // null) as $u |
-          if $u == null or ($e.timestamp // null) == null then .
-          else
-            (($u.input_tokens // 0) + ($u.output_tokens // 0) +
-             ($u.cache_creation_input_tokens // 0) +
-             ($u.cache_read_input_tokens // 0)) as $t |
-            (if $e.timestamp > $wc then .w += $t else . end) |
-            (if $e.timestamp > $sc then .s += $t else . end)
-          end
-        ) | "\(.s) \(.w)"
-    ' 2>/dev/null || echo "0 0"
-}
-
-read_usage_cached() {
-    local cache="$CCSL_CACHE_DIR/usage"
-    local lock="$CCSL_CACHE_DIR/usage.lock"
-    local age=99999
-    [ -f "$cache" ] && age=$(( $(date +%s) - $(stat_mtime "$cache") ))
-    if [ "$age" -gt "$CCSL_USAGE_TTL" ] && [ ! -f "$lock" ]; then
-        (
-            trap 'rm -f "$lock" "$cache.tmp"' EXIT
-            touch "$lock"
-            compute_usage > "$cache.tmp" && mv "$cache.tmp" "$cache"
-        ) </dev/null >/dev/null 2>&1 &
-    fi
-    cat "$cache" 2>/dev/null || echo "0 0"
-}
-
 session_emoji_for() {
     local p=$1
     if   [ "$p" -ge 90 ]; then echo "⛈️"
@@ -287,52 +235,69 @@ week_emoji_for() {
     fi
 }
 
-render_mini_bar() {
-    local p=$1 color bar blocks i=0
+build_dots() {
+    local p=$1 blocks i=0 dots=""
     blocks=$(( p / 20 ))
     [ "$blocks" -gt 5 ] && blocks=5
+    while [ "$i" -lt "$blocks" ]; do dots="${dots}●"; i=$((i+1)); done
+    while [ "$i" -lt 5 ];         do dots="${dots}○"; i=$((i+1)); done
+    printf "%s" "$dots"
+}
+
+render_mini_bar() {
+    local p=$1 color
     if   [ "$p" -ge 90 ]; then color="$C_RED"
     elif [ "$p" -ge 75 ]; then color="$C_ORANGE"
     elif [ "$p" -ge 50 ]; then color="$C_YELLOW"
     else                       color="$C_GREEN"
     fi
-    bar=""
-    while [ "$i" -lt "$blocks" ]; do bar="${bar}●"; i=$((i+1)); done
-    while [ "$i" -lt 5 ];         do bar="${bar}○"; i=$((i+1)); done
-    printf "%b%s%b" "$color" "$bar" "$C_RESET"
+    printf "%s%s%s" "$color" "$(build_dots "$p")" "$C_RESET"
+}
+
+format_countdown() {
+    local s=$1
+    if   [ "$s" -lt 3600 ];  then echo "$(( s / 60 ))m"
+    elif [ "$s" -lt 86400 ]; then echo "$(( s / 3600 ))h $(( (s % 3600) / 60 ))m"
+    else                          echo "$(( s / 86400 ))d $(( (s % 86400) / 3600 ))h"
+    fi
 }
 
 session_usage_segment=""
 week_usage_segment=""
-if [ "$CCSL_SHOW_USAGE" = "1" ] && [ "$session_quota" -gt 0 ] && [ "$week_quota" -gt 0 ]; then
-    usage_raw=$(read_usage_cached)
-    session_tokens=$(echo "$usage_raw" | awk '{print $1+0}')
-    week_tokens=$(echo "$usage_raw"   | awk '{print $2+0}')
-    session_pct=$(awk -v t="$session_tokens" -v q="$session_quota" \
-        'BEGIN { p=(t/q)*100; if (p>100) p=100; printf "%d", p }')
-    week_pct=$(awk -v t="$week_tokens" -v q="$week_quota" \
-        'BEGIN { p=(t/q)*100; if (p>100) p=100; printf "%d", p }')
-    s_bar=$(render_mini_bar "$session_pct")
-    w_bar=$(render_mini_bar "$week_pct")
-    s_emoji=$(session_emoji_for "$session_pct")
-    w_emoji=$(week_emoji_for   "$week_pct")
-    session_usage_segment="${s_emoji}  ${s_bar} ${C_DIM}~${session_pct}%${C_RESET}"
-    week_usage_segment="${w_emoji}  ${w_bar} ${C_DIM}~${week_pct}%w${C_RESET}"
+week_reset_segment=""
+if [ "$CCSL_SHOW_USAGE" = "1" ]; then
+    five_h_pct=$(j '.rate_limits.five_hour.used_percentage')
+    seven_d_pct=$(j '.rate_limits.seven_day.used_percentage')
+    seven_d_reset=$(j '.rate_limits.seven_day.resets_at')
+    if [ -n "$five_h_pct" ]; then
+        session_pct=$(printf "%.0f" "$five_h_pct")
+        s_bar=$(render_mini_bar "$session_pct")
+        s_emoji=$(session_emoji_for "$session_pct")
+        session_usage_segment="${s_emoji}  ${s_bar} ${C_DIM}${session_pct}%${C_RESET}"
+    fi
+    if [ -n "$seven_d_pct" ]; then
+        week_pct=$(printf "%.0f" "$seven_d_pct")
+        w_bar=$(render_mini_bar "$week_pct")
+        w_emoji=$(week_emoji_for "$week_pct")
+        week_usage_segment="${w_emoji}  ${w_bar} ${C_DIM}${week_pct}%w${C_RESET}"
+        case "$seven_d_reset" in
+            ''|*[!0-9]*) ;;
+            *)
+                secs_until=$(( seven_d_reset - $(date +%s) ))
+                [ "$secs_until" -gt 0 ] && week_reset_segment="↺ ${C_DIM}$(format_countdown "$secs_until")${C_RESET}"
+                ;;
+        esac
+    fi
 fi
 
 progress_bar=""; ctx_icon="🧩"
 if [ "$CCSL_SHOW_CONTEXT" = "1" ] && [ -n "$used_pct" ]; then
     pct=$(printf "%.0f" "$used_pct")
-    blocks=$(( pct / 20 ))
-    [ "$blocks" -gt 5 ] && blocks=5
     if   [ "$pct" -ge 80 ]; then bar_color="$C_RED";    ctx_icon="🔴"
     elif [ "$pct" -ge 60 ]; then bar_color="$C_YELLOW"; ctx_icon="🟡"
     else                         bar_color="$C_GREEN";  ctx_icon="🟢"
     fi
-    bar=""; i=0
-    while [ "$i" -lt "$blocks" ]; do bar="${bar}●"; i=$((i+1)); done
-    while [ "$i" -lt 5 ];         do bar="${bar}○"; i=$((i+1)); done
-    progress_bar="${bar_color}${bar}${C_RESET} $(printf "%3d" "$pct")%"
+    progress_bar="${bar_color}$(build_dots "$pct")${C_RESET} $(printf "%3d" "$pct")%"
 fi
 
 clock_now=$(date +"%H:%M")
@@ -406,7 +371,7 @@ join_group() {
 }
 
 time_group=$(join_group "$time_segment" "$clock_segment")
-capacity_group=$(join_group "$session_usage_segment" "$week_usage_segment" "$context_segment")
+capacity_group=$(join_group "$session_usage_segment" "$week_usage_segment" "$week_reset_segment" "$context_segment")
 
 [ -n "$todo_segment" ]    && line2+=("$todo_segment")
 [ -n "$time_group" ]      && line2+=("$time_group")
@@ -419,7 +384,7 @@ render_line() {
     local out="$1"; shift
     local p
     for p in "$@"; do out="${out}${separator}${p}"; done
-    printf "%b" "$out"
+    printf "%s" "$out"
 }
 
 render_line "${line1[@]}"
