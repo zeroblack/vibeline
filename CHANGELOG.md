@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-06-13
+
 ### Changed
 - Usage bars now read the real `rate_limits` Claude Code provides on stdin — the exact session (5h) and weekly (7d) percentages shown by `/usage`, with no estimation, no per-plan baselines and no `~` prefix. Replaces the previous approach of aggregating local JSONL token counts against a guessed quota. Requires a Claude Code version that exposes `rate_limits` to the statusline; the bars appear for Pro/Max subscribers after the first request in a session, and each window is shown independently when present.
 - Weekly reset is now an exact ↺ countdown derived from `rate_limits.seven_day.resets_at`, instead of being computed locally.
@@ -90,7 +92,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env var toggles for every segment
 - Interactive installer with settings.json auto-update
 
-[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.5.0...HEAD
+[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.6.0...HEAD
+[0.6.0]: https://github.com/zeroblack/vibeline/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zeroblack/vibeline/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zeroblack/vibeline/compare/v0.3.0...v0.4.0
 [0.3.0]: https://github.com/zeroblack/vibeline/compare/v0.2.1...v0.3.0
