@@ -40,18 +40,18 @@ stages=(
 
 for stage in "${stages[@]}"; do
     IFS=':' read -r mins cost pct sess_pct week_pct <<< "$stage"
-    start_ms=$(( ( $(date +%s) - mins * 60 ) * 1000 ))
+    now=$(date +%s)
+    start_ms=$(( ( now - mins * 60 ) * 1000 ))
     echo "$start_ms" > "$CCSL_CACHE_DIR/demo.start"
 
-    sess_tokens=$(( 1000000000 * sess_pct / 100 ))
-    week_tokens=$(( 6500000000 * week_pct / 100 ))
-    echo "$sess_tokens $week_tokens" > "$CCSL_CACHE_DIR/usage"
+    five_reset=$(( now + 18000 - sess_pct * 180 ))
+    week_reset=$(( now + 604800 - week_pct * 6000 ))
 
     clear
     echo
     printf '  '
-    printf '{"model":{"display_name":"Opus 4.6"},"context_window":{"used_percentage":%s},"session_id":"demo","session_name":"refactor-auth","workspace":{"current_dir":"%s"},"cost":{"total_cost_usd":%s}}' \
-        "$pct" "$DEMO_REPO" "$cost" | bash "$STATUSLINE"
+    printf '{"model":{"display_name":"Opus 4.8"},"context_window":{"used_percentage":%s},"session_id":"demo","session_name":"refactor-auth","workspace":{"current_dir":"%s"},"cost":{"total_cost_usd":%s},"rate_limits":{"five_hour":{"used_percentage":%s,"resets_at":%s},"seven_day":{"used_percentage":%s,"resets_at":%s}}}' \
+        "$pct" "$DEMO_REPO" "$cost" "$sess_pct" "$five_reset" "$week_pct" "$week_reset" | bash "$STATUSLINE"
     echo
     echo
     sleep 1.4

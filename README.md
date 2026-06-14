@@ -33,7 +33,7 @@ Two lines — identity on top, metrics below. Long session names never push anyt
 - 🎯 **tasks** — pending/in-progress/done for the current session's `TodoWrite` list (`1⚙ 2✓`). Falls back to 📋 code markers (`TODO / FIXME / XXX / HACK`) when no session tasks exist
 - 🚀 **elapsed** — how long you've been at it, with an emoji that evolves every stage
 - 💰 **cost** — session spend, colored by tier. ⚡ flashes when it grows
-- 🌊 **plan usage** — session bar (🌊→🌀→🌪→⛈️) and weekly bar (🌑→🌒→🌓→🌔→🌕) against your Max/Pro quota. Approximate, needs calibration per plan
+- 🌊 **plan usage** — session bar (🌊→🌀→🌪→⛈️) and weekly bar (🌑→🌒→🌓→🌔→🌕) for your 5-hour and 7-day limits, plus a ↺ countdown to the weekly reset. These are the real numbers from `/usage`, read straight from Claude Code — no estimation, no calibration
 - 🟢 **context** — 5-dot usage bar for the context window
 - 🌆 **clock** — wall time, with a different icon for dawn / day / evening / night
 
@@ -69,32 +69,15 @@ chmod +x ~/.claude/statusline.sh
 
 ### On a Claude subscription?
 
-Pick the value that matches your plan. The prefix `~` in the cost signals "theoretical" (you pay a flat fee, not per token), and the usage bars get the right quota baseline:
+The usage bars need no setup — they read the live `rate_limits` Claude Code hands the statusline (the same data behind `/usage`), so the percentages match exactly. They appear once you're on a Pro/Max subscription and have made at least one request in the session.
 
-| Your plan | `CCSL_PLAN` | Session baseline | Weekly baseline |
-|---|---|---|---|
-| Pro ($20/mo) | `pro` | 50M tokens | 325M tokens |
-| Max 5x ($100/mo) | `max5` | 250M tokens | 1.625B tokens |
-| Max 20x ($200/mo) | `max20` | 1B tokens | 6.5B tokens |
+The only thing left to set is `CCSL_PLAN`, which marks the cost as "theoretical" with a `~$…` prefix (on a subscription you pay a flat fee, not per token):
 
 ```json
 "command": "CCSL_PLAN=max5 /bin/bash ~/.claude/statusline.sh"
 ```
 
-> **A note on the numbers.** Anthropic publishes plan limits as relative multipliers (Max 5x / Max 20x) and as ranges of Sonnet-hours per week — not as exact token quotas. The baselines above respect the 5x / 20x ratio officially, but the absolute numbers are calibrated best-guesses. The bars show `~` to make this explicit. If yours don't match `/usage`, override them (see below).
->
-> Legacy note: `CCSL_PLAN=max` still works as an alias for `max5` for backwards compatibility.
-
-#### Calibrate against `/usage`
-
-1. Open `/usage` in Claude Code, note the session and weekly percentages
-2. Compare to what vibeline shows (e.g. vibeline says `~67%`, `/usage` says `53%`)
-3. Look up the raw tokens vibeline measured: `cat ~/.claude/cache/statusline/usage`
-4. Compute your real quota: `quota = tokens ÷ (real_pct / 100)`
-5. Lock it in:
-   ```json
-   "command": "CCSL_PLAN=max20 CCSL_SESSION_QUOTA_TOKENS=1000000000 CCSL_WEEK_QUOTA_TOKENS=6500000000 /bin/bash ~/.claude/statusline.sh"
-   ```
+Any of `pro`, `max5`, `max20` (or the legacy alias `max`) turns on the prefix; the value itself no longer changes the bars. Leave it at `api` (the default) if you pay per token and want the real dollar cost.
 
 ## Customize
 
@@ -133,18 +116,15 @@ Set any of these to `0` to hide that segment. Leave them alone to keep the defau
 | `CCSL_SHOW_ELAPSED` | `1` | evolving time emoji |
 | `CCSL_SHOW_CONTEXT` | `1` | context usage bar |
 | `CCSL_SHOW_CLOCK` | `1` | wall clock |
-| `CCSL_SHOW_USAGE` | `1` | 🌊 plan usage bars (session + week) |
-| `CCSL_PLAN` | `api` | `pro`, `max5`, or `max20` — unlocks cost prefix and usage bars (`max` is still accepted as alias for `max5`) |
-| `CCSL_SESSION_QUOTA_TOKENS` | auto | override 5h session token quota (calibrate vs `/usage`) |
-| `CCSL_WEEK_QUOTA_TOKENS` | auto | override weekly token quota |
-| `CCSL_USAGE_TTL` | `60` | seconds to cache usage aggregation |
+| `CCSL_SHOW_USAGE` | `1` | 🌊 plan usage bars (session + week) and ↺ weekly reset countdown |
+| `CCSL_PLAN` | `api` | `pro`, `max5`, or `max20` — adds the `~` theoretical prefix to the cost (`max` still works as an alias for `max5`) |
 | `CCSL_TODO_PATTERN` | `(TODO\|FIXME\|XXX\|HACK)` | regex of keywords to count |
 | `CCSL_TODO_TTL` | `60` | seconds to cache code marker count |
 | `CCSL_TASK_TTL` | `15` | seconds to cache session task read |
 | `CCSL_ACTIVITY_LINGER` | `3` | seconds ⚡ stays visible |
 | `CCSL_CACHE_DIR` | `~/.claude/cache/statusline` | cache location |
 | `CCSL_SESSIONS_DIR` | `~/.claude/sessions` | Claude Code session store |
-| `CCSL_PROJECTS_DIR` | `~/.claude/projects` | Claude Code projects store (read for token aggregation) |
+| `CCSL_PROJECTS_DIR` | `~/.claude/projects` | Claude Code projects store (read for the session task counter) |
 
 The model, folder, and git branch segments always show when relevant — they anchor line 1. If every variable on line 2 is set to `0`, the second line disappears and you get a single-line statusline.
 
@@ -209,10 +189,6 @@ Use ccstatusline if you want every possible number on screen. Use vibeline if yo
 ## Contributing
 
 See [CONTRIBUTING.md](CONTRIBUTING.md).
-
-## Credits
-
-Token-window aggregation over local JSONL was inspired by [ccusage](https://github.com/ryoppippi/ccusage) by [@ryoppippi](https://github.com/ryoppippi) — MIT-licensed. The math (rolling 5h session and 7-day windows, summing input + output + cache_creation + cache_read) follows their approach; vibeline reimplements it in Bash to stay dependency-free.
 
 ## License
 

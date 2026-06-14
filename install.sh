@@ -31,7 +31,8 @@ cat <<EOF
     }
   }
 
-  On a Claude subscription? Prepend the matching CCSL_PLAN. Examples:
+  On a Claude subscription? Prepend the matching CCSL_PLAN to mark the cost
+  as theoretical (~\$…). The usage bars read /usage automatically. Examples:
       pro     → Pro               "command": "CCSL_PLAN=pro /bin/bash $TARGET"
       max5    → Max 5x  (\$100/mo) "command": "CCSL_PLAN=max5 /bin/bash $TARGET"
       max20   → Max 20x (\$200/mo) "command": "CCSL_PLAN=max20 /bin/bash $TARGET"
