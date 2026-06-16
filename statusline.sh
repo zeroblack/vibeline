@@ -13,6 +13,7 @@
 : "${CCSL_STATUS_URL:=https://status.claude.com/api/v2/incidents/unresolved.json}"
 : "${CCSL_STATUS_LABEL=Anthropic status}"
 : "${CCSL_STATUS_MAXLEN:=48}"
+: "${CCSL_STATUS_MAX_AGE:=86400}"
 : "${CCSL_PLAN:=api}"
 : "${CCSL_TODO_PATTERN:=\\b(TODO|FIXME|XXX|HACK)\\b}"
 : "${CCSL_TODO_TTL:=60}"
@@ -311,22 +312,27 @@ if [ "$CCSL_SHOW_STATUS" = "1" ] && command -v curl >/dev/null 2>&1; then
           fi ) >/dev/null 2>&1 &
     fi
     if [ -f "$status_cache" ]; then
-        status_line=$(jq -r '
-            (.incidents // []) as $inc
-            | ($inc | length) as $n
-            | if $n == 0 then empty
+        status_line=$(jq -r --argjson now "$(date +%s)" --argjson maxage "$CCSL_STATUS_MAX_AGE" '
+            [ .incidents[]?
+              | ( (.incident_updates // []) | sort_by(.created_at) | reverse ) as $u
+              | { impact, name,
+                  rank: ({critical:3, major:2, minor:1}[.impact] // 0),
+                  ustatus: ($u[0].status // .status),
+                  body: ($u[0].body // ""),
+                  uepoch: (($u[0].created_at // .updated_at // "") | sub("\\.[0-9]+"; "") | (fromdateiso8601? // 0)),
+                  sepoch: ((.started_at // .created_at // "") | sub("\\.[0-9]+"; "") | (fromdateiso8601? // 0)) }
+            ]
+            | map(select($maxage <= 0 or (.uepoch > 0 and ($now - .uepoch) <= $maxage))) as $fresh
+            | if ($fresh | length) == 0 then empty
               else
-                ($inc | map(. + {rank: ({critical:3, major:2, minor:1}[.impact] // 0)})
-                      | sort_by(.rank, .updated_at) | reverse | .[0]) as $top
-                | ($top.incident_updates // [] | sort_by(.created_at) | reverse | .[0]) as $u
+                ($fresh | sort_by(.rank, .uepoch) | reverse | .[0]) as $top
                 | ($top.name | gsub("[[:space:]]+"; " ") | gsub("[[:cntrl:]]"; "")) as $name
-                | (($u.body // "") | gsub("[[:space:]]+"; " ") | gsub("[[:cntrl:]]"; "")) as $body
-                | (($u.created_at // $top.updated_at // "") | sub("\\.[0-9]+"; "") | (fromdateiso8601? // 0)) as $epoch
-                | "\($top.impact)\t\($top.status)\t\($n)\t\($epoch)\t\($name)\t\($body)"
+                | ($top.body | gsub("[[:space:]]+"; " ") | gsub("[[:cntrl:]]"; "")) as $body
+                | "\($top.impact)\t\($top.ustatus)\t\($fresh | length)\t\($top.sepoch)\t\($top.uepoch)\t\($name)\t\($body)"
               end
         ' "$status_cache" 2>/dev/null | head -1)
         if [ -n "$status_line" ]; then
-            IFS=$'\t' read -r st_impact st_status st_count st_epoch st_name st_body <<EOF
+            IFS=$'\t' read -r st_impact st_status st_count st_start st_uepoch st_name st_body <<EOF
 $status_line
 EOF
             case "$st_impact" in
@@ -338,19 +344,26 @@ EOF
                 st_name="${st_name:0:$(( CCSL_STATUS_MAXLEN - 1 ))}…"
             fi
             st_time=""
-            if [ -n "$st_epoch" ] && [ "$st_epoch" != "0" ]; then
-                st_time=$(date -r "$st_epoch" "+%b %d, %H:%M" 2>/dev/null || date -d "@$st_epoch" "+%b %d, %H:%M" 2>/dev/null)
+            if [ -n "$st_start" ] && [ "$st_start" != "0" ]; then
+                st_time=$(date -r "$st_start" "+%b %d, %H:%M" 2>/dev/null || date -d "@$st_start" "+%b %d, %H:%M" 2>/dev/null)
             fi
             st_extra=""
             [ -n "$st_status" ] && st_extra=" ${C_DIM}·${st_status}${C_RESET}${st_color}"
             [ "${st_count:-0}" -gt 1 ] && st_extra="${st_extra} +$(( st_count - 1 ))"
-            [ -n "$st_time" ] && st_extra="${st_extra} ${C_DIM}· ${st_time}${C_RESET}"
+            time_prefix=""
+            [ -n "$st_time" ] && time_prefix="${st_color}${st_time}${C_RESET} ${C_DIM}·${C_RESET} "
             st_label=""
             [ -n "$CCSL_STATUS_LABEL" ] && st_label="${st_color}${CCSL_STATUS_LABEL}${C_RESET} ${C_DIM}·${C_RESET} "
-            status_segment="${st_emoji}  ${st_label}${st_color}${st_name}${st_extra}${C_RESET}"
+            status_segment="${st_emoji}  ${time_prefix}${st_label}${st_color}${st_name}${st_extra}${C_RESET}"
             if [ -n "$st_body" ]; then
                 [ "${#st_body}" -gt 120 ] && st_body="${st_body:0:119}…"
-                status_detail="   ${C_DIM}↳ ${st_body}${C_RESET}"
+                st_utime=""
+                if [ -n "$st_uepoch" ] && [ "$st_uepoch" != "0" ]; then
+                    st_utime=$(date -r "$st_uepoch" "+%H:%M" 2>/dev/null || date -d "@$st_uepoch" "+%H:%M" 2>/dev/null)
+                fi
+                dtime=""
+                [ -n "$st_utime" ] && dtime="${C_MUTED}${st_utime}${C_RESET} "
+                status_detail="   ${C_DIM}↳${C_RESET} ${dtime}${C_DIM}${st_body}${C_RESET}"
             fi
         fi
     fi
