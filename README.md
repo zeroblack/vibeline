@@ -39,7 +39,7 @@ Two lines — identity on top, metrics below. Long session names never push anyt
 
 **Line 3 — only when something breaks**
 
-- 🟡🟠🔴 **Anthropic status** — a small panel that appears *only* while there's an active incident on [status.claude.com](https://status.claude.com), and vanishes on its own once it's resolved. The header is labelled `Anthropic status` and shows the worst-impact incident's name, phase (`·investigating` / `·identified` / `·monitoring`), a `+N` when more than one is open, and the time of the latest update in your local timezone. Below it, a `↳` line carries the latest update's message. Colored by severity. The check runs in the background on a TTL cache, so it never slows a render down.
+- 🟡🟠🔴 **Anthropic status** — a small panel that appears *only* while there's an active incident on [status.claude.com](https://status.claude.com), and vanishes on its own once it's resolved. The header is labelled `Anthropic status` and shows the worst-impact incident's name, phase (`·investigating` / `·identified` / `·monitoring`), a `+N` when more than one is open, and the time it started in your local timezone. Below it, a `↳` line carries the latest update — prefixed with its own local time, so you see at a glance how recent it is. Only incidents updated within the last 24h are eligible, so a days-old standing notice never sticks to the bar. Colored by severity. The check runs in the background on a TTL cache, so it never slows a render down.
 
 ## Install
 
@@ -126,6 +126,7 @@ Set any of these to `0` to hide that segment. Leave them alone to keep the defau
 | `CCSL_STATUS_URL` | Statuspage unresolved-incidents API | endpoint to poll for active incidents |
 | `CCSL_STATUS_LABEL` | `Anthropic status` | label shown before the incident name (set empty to hide it) |
 | `CCSL_STATUS_MAXLEN` | `48` | max incident-name length before truncating with `…` |
+| `CCSL_STATUS_MAX_AGE` | `86400` | seconds since an incident's last update before it's hidden (default 24h; `0` disables) |
 | `CCSL_PLAN` | `api` | `pro`, `max5`, or `max20` — adds the `~` theoretical prefix to the cost (`max` still works as an alias for `max5`) |
 | `CCSL_TODO_PATTERN` | `(TODO\|FIXME\|XXX\|HACK)` | regex of keywords to count |
 | `CCSL_TODO_TTL` | `60` | seconds to cache code marker count |

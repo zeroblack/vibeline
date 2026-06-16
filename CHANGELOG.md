@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.2] - 2026-06-16
+
+### Changed
+- The status panel now ignores incidents with no update in the last 24h, so a days-old standing notice (e.g. a product-availability change parked in `monitoring`) no longer pins itself to the bar over a fresh, relevant incident. The shown incident is the worst-impact one *among those recently updated*; if none qualify, the panel stays hidden.
+- The header now leads with the incident's start time (when it was first reported), in the incident's severity color, and the `↳` update line is prefixed with that update's own local time — so "since when" and "as of when" are both readable at a glance.
+
+### Added
+- `CCSL_STATUS_MAX_AGE` (default `86400`, i.e. 24h; `0` disables) — seconds since an incident's last update before it's hidden.
+
 ## [0.6.1] - 2026-06-16
 
 ### Added
@@ -101,7 +110,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env var toggles for every segment
 - Interactive installer with settings.json auto-update
 
-[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.6.1...HEAD
+[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.6.2...HEAD
+[0.6.2]: https://github.com/zeroblack/vibeline/compare/v0.6.1...v0.6.2
 [0.6.1]: https://github.com/zeroblack/vibeline/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/zeroblack/vibeline/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zeroblack/vibeline/compare/v0.4.0...v0.5.0
