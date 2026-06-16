@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.1] - 2026-06-16
+
+### Added
+- Anthropic status panel: a line that appears only while there's an active incident on [status.claude.com](https://status.claude.com) and disappears on its own once it's resolved. It polls the Statuspage incident API in the background on a TTL cache, so it never blocks a render. The header is labelled `Anthropic status` and shows the worst-impact incident's name, phase, a `+N` when more than one is open, and the time of the latest update in your local timezone; a `↳` line below carries the update's message. Colored by severity (🟡 minor, 🟠 major, 🔴 critical).
+- `CCSL_SHOW_STATUS`, `CCSL_STATUS_TTL`, `CCSL_STATUS_URL`, `CCSL_STATUS_LABEL` and `CCSL_STATUS_MAXLEN` to toggle and tune the panel.
+
+### Security
+- Incident name and update text from the status API are stripped of control characters and printed with `printf %s`, so a crafted incident field cannot inject ANSI escapes or extra lines into the terminal — the same hardening applied to session fields in 0.6.0.
+
 ## [0.6.0] - 2026-06-13
 
 ### Changed
@@ -92,7 +101,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Env var toggles for every segment
 - Interactive installer with settings.json auto-update
 
-[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.6.0...HEAD
+[Unreleased]: https://github.com/zeroblack/vibeline/compare/v0.6.1...HEAD
+[0.6.1]: https://github.com/zeroblack/vibeline/compare/v0.6.0...v0.6.1
 [0.6.0]: https://github.com/zeroblack/vibeline/compare/v0.5.0...v0.6.0
 [0.5.0]: https://github.com/zeroblack/vibeline/compare/v0.4.0...v0.5.0
 [0.4.0]: https://github.com/zeroblack/vibeline/compare/v0.3.0...v0.4.0

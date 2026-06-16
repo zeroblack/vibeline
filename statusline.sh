@@ -8,6 +8,11 @@
 : "${CCSL_SHOW_CONTEXT:=1}"
 : "${CCSL_SHOW_CLOCK:=1}"
 : "${CCSL_SHOW_USAGE:=1}"
+: "${CCSL_SHOW_STATUS:=1}"
+: "${CCSL_STATUS_TTL:=90}"
+: "${CCSL_STATUS_URL:=https://status.claude.com/api/v2/incidents/unresolved.json}"
+: "${CCSL_STATUS_LABEL=Anthropic status}"
+: "${CCSL_STATUS_MAXLEN:=48}"
 : "${CCSL_PLAN:=api}"
 : "${CCSL_TODO_PATTERN:=\\b(TODO|FIXME|XXX|HACK)\\b}"
 : "${CCSL_TODO_TTL:=60}"
@@ -290,6 +295,67 @@ if [ "$CCSL_SHOW_USAGE" = "1" ]; then
     fi
 fi
 
+status_segment=""; status_detail=""
+if [ "$CCSL_SHOW_STATUS" = "1" ] && command -v curl >/dev/null 2>&1; then
+    status_cache="$CCSL_CACHE_DIR/anthropic-status.json"
+    status_fetch="$CCSL_CACHE_DIR/anthropic-status.fetch"
+    fetch_age=99999
+    [ -f "$status_fetch" ] && fetch_age=$(( $(date +%s) - $(stat_mtime "$status_fetch") ))
+    if [ "$fetch_age" -gt "$CCSL_STATUS_TTL" ]; then
+        date +%s > "$status_fetch"
+        tmp="$status_cache.$$"
+        ( if curl -fsS --max-time 8 "$CCSL_STATUS_URL" -o "$tmp" 2>/dev/null; then
+              mv "$tmp" "$status_cache"
+          else
+              rm -f "$tmp"
+          fi ) >/dev/null 2>&1 &
+    fi
+    if [ -f "$status_cache" ]; then
+        status_line=$(jq -r '
+            (.incidents // []) as $inc
+            | ($inc | length) as $n
+            | if $n == 0 then empty
+              else
+                ($inc | map(. + {rank: ({critical:3, major:2, minor:1}[.impact] // 0)})
+                      | sort_by(.rank, .updated_at) | reverse | .[0]) as $top
+                | ($top.incident_updates // [] | sort_by(.created_at) | reverse | .[0]) as $u
+                | ($top.name | gsub("[[:space:]]+"; " ") | gsub("[[:cntrl:]]"; "")) as $name
+                | (($u.body // "") | gsub("[[:space:]]+"; " ") | gsub("[[:cntrl:]]"; "")) as $body
+                | (($u.created_at // $top.updated_at // "") | sub("\\.[0-9]+"; "") | (fromdateiso8601? // 0)) as $epoch
+                | "\($top.impact)\t\($top.status)\t\($n)\t\($epoch)\t\($name)\t\($body)"
+              end
+        ' "$status_cache" 2>/dev/null | head -1)
+        if [ -n "$status_line" ]; then
+            IFS=$'\t' read -r st_impact st_status st_count st_epoch st_name st_body <<EOF
+$status_line
+EOF
+            case "$st_impact" in
+                critical) st_emoji="🔴"; st_color="$C_RED" ;;
+                major)    st_emoji="🟠"; st_color="$C_ORANGE" ;;
+                *)        st_emoji="🟡"; st_color="$C_YELLOW" ;;
+            esac
+            if [ "${#st_name}" -gt "$CCSL_STATUS_MAXLEN" ]; then
+                st_name="${st_name:0:$(( CCSL_STATUS_MAXLEN - 1 ))}…"
+            fi
+            st_time=""
+            if [ -n "$st_epoch" ] && [ "$st_epoch" != "0" ]; then
+                st_time=$(date -r "$st_epoch" "+%b %d, %H:%M" 2>/dev/null || date -d "@$st_epoch" "+%b %d, %H:%M" 2>/dev/null)
+            fi
+            st_extra=""
+            [ -n "$st_status" ] && st_extra=" ${C_DIM}·${st_status}${C_RESET}${st_color}"
+            [ "${st_count:-0}" -gt 1 ] && st_extra="${st_extra} +$(( st_count - 1 ))"
+            [ -n "$st_time" ] && st_extra="${st_extra} ${C_DIM}· ${st_time}${C_RESET}"
+            st_label=""
+            [ -n "$CCSL_STATUS_LABEL" ] && st_label="${st_color}${CCSL_STATUS_LABEL}${C_RESET} ${C_DIM}·${C_RESET} "
+            status_segment="${st_emoji}  ${st_label}${st_color}${st_name}${st_extra}${C_RESET}"
+            if [ -n "$st_body" ]; then
+                [ "${#st_body}" -gt 120 ] && st_body="${st_body:0:119}…"
+                status_detail="   ${C_DIM}↳ ${st_body}${C_RESET}"
+            fi
+        fi
+    fi
+fi
+
 progress_bar=""; ctx_icon="🧩"
 if [ "$CCSL_SHOW_CONTEXT" = "1" ] && [ -n "$used_pct" ]; then
     pct=$(printf "%.0f" "$used_pct")
@@ -389,3 +455,7 @@ render_line() {
 
 render_line "${line1[@]}"
 [ "${#line2[@]}" -gt 0 ] && { printf "\n"; render_line "${line2[@]}"; }
+[ -n "$status_segment" ] && { printf "\n"; printf "%s" "$status_segment"; }
+[ -n "$status_detail" ]  && { printf "\n"; printf "%s" "$status_detail"; }
+
+exit 0

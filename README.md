@@ -37,6 +37,10 @@ Two lines — identity on top, metrics below. Long session names never push anyt
 - 🟢 **context** — 5-dot usage bar for the context window
 - 🌆 **clock** — wall time, with a different icon for dawn / day / evening / night
 
+**Line 3 — only when something breaks**
+
+- 🟡🟠🔴 **Anthropic status** — a small panel that appears *only* while there's an active incident on [status.claude.com](https://status.claude.com), and vanishes on its own once it's resolved. The header is labelled `Anthropic status` and shows the worst-impact incident's name, phase (`·investigating` / `·identified` / `·monitoring`), a `+N` when more than one is open, and the time of the latest update in your local timezone. Below it, a `↳` line carries the latest update's message. Colored by severity. The check runs in the background on a TTL cache, so it never slows a render down.
+
 ## Install
 
 **1.** Download the script:
@@ -117,6 +121,11 @@ Set any of these to `0` to hide that segment. Leave them alone to keep the defau
 | `CCSL_SHOW_CONTEXT` | `1` | context usage bar |
 | `CCSL_SHOW_CLOCK` | `1` | wall clock |
 | `CCSL_SHOW_USAGE` | `1` | 🌊 plan usage bars (session + week) and ↺ weekly reset countdown |
+| `CCSL_SHOW_STATUS` | `1` | 🟡 Anthropic incident line (appears only during an active incident) |
+| `CCSL_STATUS_TTL` | `90` | seconds to cache the status check before refreshing in the background |
+| `CCSL_STATUS_URL` | Statuspage unresolved-incidents API | endpoint to poll for active incidents |
+| `CCSL_STATUS_LABEL` | `Anthropic status` | label shown before the incident name (set empty to hide it) |
+| `CCSL_STATUS_MAXLEN` | `48` | max incident-name length before truncating with `…` |
 | `CCSL_PLAN` | `api` | `pro`, `max5`, or `max20` — adds the `~` theoretical prefix to the cost (`max` still works as an alias for `max5`) |
 | `CCSL_TODO_PATTERN` | `(TODO\|FIXME\|XXX\|HACK)` | regex of keywords to count |
 | `CCSL_TODO_TTL` | `60` | seconds to cache code marker count |
@@ -153,6 +162,7 @@ The model, folder, and git branch segments always show when relevant — they an
 - `jq`
 - `awk`
 - `git` (optional, only for branch and TODO segments)
+- `curl` (optional, only for the Anthropic status line)
 - A terminal with emoji support
 
 Tested on macOS and Linux. Works inside Claude Code's TUI, iTerm2, WezTerm, Alacritty, and Kitty.
